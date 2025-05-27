@@ -380,6 +380,35 @@ def create_app() -> FastAPI:
             "channel_secret_length": len(Config.CHANNEL_SECRET) if Config.CHANNEL_SECRET else 0
         }
 
+    @app.post("/callback-debug")
+    async def callback_debug(request: Request):
+        """Debug 版本的 callback，輸出詳細資訊"""
+        try:
+            # 取得所有 headers
+            headers = dict(request.headers)
+
+            # 取得 body
+            body = await request.body()
+            body_text = body.decode('utf-8')
+
+            # 取得簽名
+            signature = headers.get('x-line-signature', 'Missing')
+
+            # 檢查配置
+            channel_secret_length = len(Config.CHANNEL_SECRET) if Config.CHANNEL_SECRET else 0
+
+            return {
+                "headers": headers,
+                "body_length": len(body_text),
+                "signature_exists": signature != 'Missing',
+                "signature_value": signature[:20] + "..." if signature != 'Missing' else 'Missing',
+                "channel_secret_length": channel_secret_length,
+                "config_valid": bool(Config.CHANNEL_SECRET and Config.CHANNEL_ACCESS_TOKEN)
+            }
+
+        except Exception as e:
+            return {"error": str(e)}
+
     # 添加異常處理器
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
