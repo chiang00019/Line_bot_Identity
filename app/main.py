@@ -368,6 +368,18 @@ def create_app() -> FastAPI:
         </html>
         """)
 
+    @app.get("/test-config")
+    async def test_config():
+        """測試配置是否正確載入"""
+        from config.settings import Config
+
+        return {
+            "channel_access_token_exists": bool(Config.CHANNEL_ACCESS_TOKEN),
+            "channel_secret_exists": bool(Config.CHANNEL_SECRET),
+            "channel_access_token_length": len(Config.CHANNEL_ACCESS_TOKEN) if Config.CHANNEL_ACCESS_TOKEN else 0,
+            "channel_secret_length": len(Config.CHANNEL_SECRET) if Config.CHANNEL_SECRET else 0
+        }
+
     # 添加異常處理器
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
