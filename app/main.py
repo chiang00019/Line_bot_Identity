@@ -411,6 +411,46 @@ def create_app() -> FastAPI:
         except Exception as e:
             return {"error": str(e)}
 
+    @app.post("/callback-test")
+    async def line_webhook_test(request: Request):
+        """測試版 callback，跳過簽名驗證"""
+        try:
+            # 取得 request body
+            body = await request.body()
+            body_text = body.decode('utf-8')
+
+            logger.info(f"收到測試 Webhook 請求，大小: {len(body_text)} bytes")
+
+            # 解析事件（不驗證簽名）
+            import json
+            from linebot.models import MessageEvent, TextMessage
+
+            events_data = json.loads(body_text)
+
+            # 處理每個事件
+            for event_data in events_data.get('events', []):
+                if event_data.get('type') == 'message' and event_data.get('message', {}).get('type') == 'text':
+                    # 建立假的事件物件進行測試
+                    class FakeEvent:
+                        def __init__(self, data):
+                            self.reply_token = data.get('replyToken')
+                            self.source = type('Source', (), {
+                                'user_id': data.get('source', {}).get('userId'),
+                                'group_id': data.get('source', {}).get('groupId')
+                            })()
+                            self.message = type('Message', (), {
+                                'text': data.get('message', {}).get('text')
+                            })()
+
+                    fake_event = FakeEvent(event_data)
+                    handle_message(line_bot_api, fake_event)
+
+            return {"status": "ok", "message": "Test event processed successfully"}
+
+        except Exception as e:
+            logger.error(f"測試 Webhook 處理錯誤: {str(e)}")
+            return {"status": "error", "message": str(e)}
+
     # 添加異常處理器
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
