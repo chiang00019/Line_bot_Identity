@@ -1,12 +1,12 @@
 # === 核心框架 ===
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
+fastapi==0.100.1
+uvicorn==0.23.2
 
 # === Line Bot SDK ===
 line-bot-sdk==3.5.0
 
 # === 資料庫 ===
-sqlalchemy==2.0.23
+sqlalchemy==1.4.53
 
 # === 環境變數 ===
 python-dotenv==1.0.0
@@ -14,56 +14,8 @@ python-dotenv==1.0.0
 # === HTTP 請求 ===
 requests==2.31.0
 
-# === 日期時間 ===
-python-dateutil==2.8.2
-
-# === 其他工具 ===
-pydantic==2.4.2
+# === 其他必要套件 ===
 typing-extensions==4.8.0
-
-# === 安全性 ===
-cryptography==41.0.7
-
-# === 加密 ===
-bcrypt==4.0.1
-
-# === OTP 驗證 ===
-pyotp==2.9.0
-
-# === JWT ===
-pyjwt==2.8.0
-
-# === 表單處理 ===
-python-multipart==0.0.6
 
 # === 生產環境 ===
 gunicorn==21.2.0
-
-# 資料庫
-alembic==1.12.0
-
-# 郵件
-aiosmtplib==2.0.2  # 異步 SMTP 客戶端
-
-# 日誌
-loguru==0.7.2
-
-# 開發工具
-pytest==7.4.2
-pytest-asyncio==0.21.1
-pytest-cov==4.1.0
-black==23.9.1
-flake8==6.0.0
-mypy==1.5.1
-
-# 工具庫
-click==8.1.7
-colorama==0.4.6
-tqdm==4.66.1
-
-# 資料庫驅動（可選）
-psycopg2-binary==2.9.7  # PostgreSQL
-mysql-connector-python==8.1.0  # MySQL
-
-# 郵件處理
-imapclient==2.3.1
