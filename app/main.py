@@ -395,9 +395,11 @@ def create_app() -> FastAPI:
             signature = headers.get('x-line-signature', 'Missing')
 
             # 檢查配置
+            from config.settings import Config
             channel_secret_length = len(Config.CHANNEL_SECRET) if Config.CHANNEL_SECRET else 0
 
             return {
+                "status": "debug_success",
                 "headers": headers,
                 "body_length": len(body_text),
                 "signature_exists": signature != 'Missing',
