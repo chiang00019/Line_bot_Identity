@@ -7,8 +7,8 @@ from linebot.models import TextSendMessage, QuickReply, QuickReplyButton, Messag
 from app.database import get_db_session
 from app.models import Group, User, GroupMember, TokenLog
 from app.services.token_service import TokenService
-from app.services.email_service import EmailService
-from app.services.razer_service import RazerService
+# from app.services.email_service import EmailService  # 暫時註解
+# from app.services.razer_service import RazerService  # 暫時註解
 import logging
 import re
 
@@ -19,8 +19,8 @@ class BotHandler:
 
     def __init__(self):
         self.token_service = TokenService()
-        self.email_service = EmailService()
-        self.razer_service = RazerService()
+        # self.email_service = EmailService()  # 暫時註解
+        # self.razer_service = RazerService()  # 暫時註解
 
     def handle_message(self, line_bot_api, event):
         """
