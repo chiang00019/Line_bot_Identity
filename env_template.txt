@@ -1,0 +1,29 @@
+# Line Bot 設定 - 請將此檔案內容複製到 .env 檔案中
+# 請到 Line Developers Console 的 Messaging API 頁面取得您的 Channel Access Token
+
+CHANNEL_ACCESS_TOKEN=請替換為您的Channel_Access_Token
+CHANNEL_SECRET=7722bc67ef58e17456956cd4101b95af
+
+# 應用程式設定
+DEBUG=True
+PORT=5000
+HOST=0.0.0.0
+
+# 資料庫設定
+DATABASE_URL=sqlite:///game_bot.db
+
+# 郵件設定（可選）
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+
+# Razer 支付設定（可選）
+RAZER_MERCHANT_ID=your_merchant_id
+RAZER_SECRET_KEY=your_secret_key
+
+# 加密金鑰
+SECRET_KEY=your_secret_key_for_encryption
+
+# Chrome Driver 路徑（用於自動化）
+CHROME_DRIVER_PATH=/usr/local/bin/chromedriver

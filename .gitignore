@@ -1,0 +1,107 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# === 虛擬環境 ===
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# === 環境變數與敏感資料 ===
+.env
+.env.local
+.env.production
+.env.staging
+config.ini
+secrets.json
+
+# === 資料庫 ===
+*.db
+*.sqlite
+*.sqlite3
+database.db
+test.db
+
+# === IDE 設定 ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === 系統檔案 ===
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# === 日誌檔案 ===
+*.log
+logs/
+log/
+
+# === 臨時檔案 ===
+*.tmp
+*.temp
+temp/
+tmp/
+
+# === 備份檔案 ===
+*.bak
+*.backup
+*~
+
+# === 測試相關 ===
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# === Jupyter Notebook ===
+.ipynb_checkpoints
+
+# === pyenv ===
+.python-version
+
+# === 上傳檔案 ===
+uploads/
+media/
+static/media/
+
+# === 第三方工具 ===
+ngrok.exe
+ngrok
+*.exe
+
+# === 專案特定檔案 ===
+screenshots/
+zip_files/
+email_attachments/

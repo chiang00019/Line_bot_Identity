@@ -1,0 +1,74 @@
+# Web 框架 - FastAPI
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Line Bot SDK
+line-bot-sdk==3.2.0
+
+# 資料庫
+SQLAlchemy==2.0.21
+alembic==1.12.0
+
+# 環境變數管理
+python-dotenv==1.0.0
+
+# HTTP 請求
+requests==2.31.0
+httpx==0.25.0  # FastAPI 推薦的異步 HTTP 客戶端
+
+# 加密
+cryptography==41.0.4
+
+# 自動化工具
+selenium==4.15.0
+pyautogui==0.9.54
+Pillow==10.0.1
+
+# 郵件
+aiosmtplib==2.0.2  # 異步 SMTP 客戶端
+
+# 日期時間處理
+python-dateutil==2.8.2
+
+# JSON 處理
+orjson==3.9.7
+
+# 密碼處理
+bcrypt==4.0.1
+passlib==1.7.4
+
+# 日誌
+loguru==0.7.2
+
+# 開發工具
+pytest==7.4.2
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+black==23.9.1
+flake8==6.0.0
+mypy==1.5.1
+
+# 生產環境
+gunicorn==21.2.0
+redis==5.0.0
+
+# 工具庫
+click==8.1.7
+colorama==0.4.6
+tqdm==4.66.1
+
+# 安全
+pyjwt==2.8.0
+
+# 驗證和授權
+python-multipart==0.0.6  # 用於 form data
+
+# 資料庫驅動（可選）
+psycopg2-binary==2.9.7  # PostgreSQL
+mysql-connector-python==8.1.0  # MySQL
+
+# OTP 驗證
+pyotp==2.9.0
+
+# 郵件處理
+imapclient==2.3.1
