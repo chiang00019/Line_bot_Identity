@@ -17,7 +17,7 @@ import os
 import logging
 from dotenv import load_dotenv
 
-from app.bot_handler import handle_message
+from app.bot_handler import handle_message as process_line_event
 from config.settings import Config
 
 # 載入環境變數
@@ -32,6 +32,7 @@ logger.info("--- app/main.py: Script started, imports successful (logger) ---")
 
 def create_app() -> FastAPI:
     """創建FastAPI應用程式"""
+    logger.info("--- app/main.py: create_app() called ---")
     app = FastAPI(
         title="遊戲自動化儲值 Line Bot",
         description="一個基於 Line Bot 的遊戲自動化儲值系統，支援 Razer Gold 支付和自動化操作。",
@@ -39,14 +40,24 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc"
     )
+    logger.info("--- app/main.py: FastAPI app instance created in create_app ---")
 
     # 驗證配置
+    logger.info("--- app/main.py: Validating config ---")
     if not Config.validate_config():
+        logger.error("--- app/main.py: Config validation FAILED ---")
         raise RuntimeError("配置驗證失敗，請檢查環境變數設定")
+    logger.info("--- app/main.py: Config validation PASSED ---")
 
     # Line Bot API 設定
-    line_bot_api = LineBotApi(Config.CHANNEL_ACCESS_TOKEN)
-    handler = WebhookHandler(Config.CHANNEL_SECRET)
+    logger.info("--- app/main.py: Initializing LineBotApi and WebhookHandler ---")
+    try:
+        line_bot_api = LineBotApi(Config.CHANNEL_ACCESS_TOKEN)
+        handler = WebhookHandler(Config.CHANNEL_SECRET)
+        logger.info("--- app/main.py: LineBotApi and WebhookHandler initialized successfully ---")
+    except Exception as e:
+        logger.error(f"--- app/main.py: ERROR initializing LineBotApi/WebhookHandler: {e} ---")
+        raise
 
     @app.on_event("startup")
     async def startup_event():
@@ -90,55 +101,37 @@ def create_app() -> FastAPI:
         - Postback 事件
         - 位置訊息等
         """
+        logger.info("--- app/main.py: /callback endpoint hit ---")
+        signature = request.headers.get('X-Line-Signature')
+        body = await request.body()
+        body_text = body.decode('utf-8')
+        logger.debug(f"Request body: {body_text}")
+        logger.debug(f"Signature: {signature}")
+
         try:
-            # 取得 X-Line-Signature header
-            signature = request.headers.get('X-Line-Signature')
-            if not signature:
-                logger.error("Missing X-Line-Signature header")
-                raise HTTPException(status_code=400, detail="Missing X-Line-Signature header")
-
-            # 取得 request body
-            body = await request.body()
-            if not body:
-                logger.error("Empty request body")
-                raise HTTPException(status_code=400, detail="Empty request body")
-
-            body_text = body.decode('utf-8')
-
-            # 記錄收到的請求（但不記錄敏感資料）
-            logger.info(f"收到 Line Webhook 請求，大小: {len(body_text)} bytes")
-
-            # 驗證 signature
-            try:
-                handler.handle(body_text, signature)
-                logger.info("Line Webhook 事件處理成功")
-            except InvalidSignatureError as e:
-                logger.warning("Invalid signature. Please check your channel access token/channel secret.")
-                raise HTTPException(status_code=400, detail="Invalid signature")
-            except Exception as e:
-                logger.error(f"處理 Line 事件時發生錯誤: {str(e)}")
-                raise HTTPException(status_code=500, detail="Error processing Line event")
-
-            return {"status": "ok", "message": "Event processed successfully"}
-
-        except HTTPException:
-            # 重新拋出 HTTP 異常
-            raise
+            handler.handle(body_text, signature)
+            logger.info("--- app/main.py: Webhook event processed by handler ---")
+        except InvalidSignatureError:
+            logger.warning("--- app/main.py: Invalid signature. Check your CHANNEL_SECRET. ---")
+            raise HTTPException(status_code=400, detail="Invalid signature")
         except Exception as e:
-            logger.error(f"Webhook 處理發生未預期的錯誤: {str(e)}")
-            raise HTTPException(status_code=500, detail="Internal server error")
+            logger.error(f"--- app/main.py: Error processing webhook: {str(e)} ---")
+            import traceback
+            logger.error(traceback.format_exc())
+            raise HTTPException(status_code=500, detail="Error processing webhook")
+        return {"status": "ok"}
 
     # === Line 事件處理器 ===
 
     @handler.add(MessageEvent, message=TextMessage)
-    def handle_text_message(event):
+    def handle_text_message_event(event):
         """處理文字訊息"""
         try:
             user_id = event.source.user_id
             message_text = event.message.text
-            logger.info(f"收到用戶 {user_id} 的文字訊息: {message_text}")
+            logger.info(f"--- app/main.py: TextMessage event received: {message_text} ---")
 
-            handle_message(line_bot_api, event)
+            process_line_event(line_bot_api, event)
 
         except LineBotApiError as e:
             logger.error(f"Line Bot API 錯誤: {str(e)}")
@@ -236,11 +229,11 @@ def create_app() -> FastAPI:
             logger.error(f"處理 Postback 事件時發生錯誤: {str(e)}")
 
     @handler.add(FollowEvent)
-    def handle_follow(event):
+    def handle_follow_event(event):
         """處理用戶追蹤事件"""
         try:
             user_id = event.source.user_id
-            logger.info(f"新用戶追蹤: {user_id}")
+            logger.info(f"--- app/main.py: FollowEvent received from user: {user_id} ---")
 
             # 歡迎新用戶
             from linebot.models import TextSendMessage
@@ -275,11 +268,11 @@ def create_app() -> FastAPI:
             logger.error(f"處理取消追蹤事件時發生錯誤: {str(e)}")
 
     @handler.add(JoinEvent)
-    def handle_join(event):
+    def handle_join_event(event):
         """處理 Bot 被加入群組事件"""
         try:
             group_id = event.source.group_id if hasattr(event.source, 'group_id') else 'unknown'
-            logger.info(f"Bot 被加入群組: {group_id}")
+            logger.info(f"--- app/main.py: JoinEvent received. Bot joined group: {group_id} ---")
 
             from linebot.models import TextSendMessage
             welcome_text = """🎮 感謝將我加入此群組！
@@ -357,7 +350,7 @@ def create_app() -> FastAPI:
         """)
 
     @app.get("/test-config")
-    async def test_config():
+    async def test_config_endpoint():
         """測試配置是否正確載入"""
         from config.settings import Config
 
@@ -369,7 +362,7 @@ def create_app() -> FastAPI:
         }
 
     @app.post("/callback-debug")
-    async def callback_debug(request: Request):
+    async def callback_debug_endpoint(request: Request):
         """Debug 版本的 callback，輸出詳細資訊"""
         try:
             # 取得所有 headers
@@ -400,14 +393,15 @@ def create_app() -> FastAPI:
             return {"error": str(e)}
 
     @app.post("/callback-test")
-    async def line_webhook_test(request: Request):
+    async def line_webhook_test_endpoint(request: Request):
         """測試版 callback，跳過簽名驗證"""
         try:
             # 取得 request body
             body = await request.body()
             body_text = body.decode('utf-8')
 
-            logger.info(f"收到測試 Webhook 請求，大小: {len(body_text)} bytes")
+            logger.info(f"--- app/main.py: /callback-test endpoint hit ---")
+            logger.info(f"--- app/main.py: /callback-test received body: {body_text[:100]}... ---")
 
             # 解析事件（不驗證簽名）
             import json
@@ -431,9 +425,9 @@ def create_app() -> FastAPI:
                             })()
 
                     fake_event = FakeEvent(event_data)
-                    handle_message(line_bot_api, fake_event)
+                    process_line_event(line_bot_api, fake_event)
 
-            return {"status": "ok", "message": "Test event processed successfully"}
+            return {"status": "ok", "message": "Test event processed (simulated)"}
 
         except Exception as e:
             logger.error(f"測試 Webhook 處理錯誤: {str(e)}")
@@ -461,4 +455,6 @@ def create_app() -> FastAPI:
     return app
 
 # 創建應用程式實例
+logger.info("--- app/main.py: Calling create_app() to create app instance ---")
 app = create_app()
+logger.info("--- app/main.py: FastAPI app instance 'app' created globally ---")
