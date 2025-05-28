@@ -462,15 +462,3 @@ def create_app() -> FastAPI:
 
 # 創建應用程式實例
 app = create_app()
-
-print("--- app/main.py: This file should ideally not be fully imported by the current minimal zeabur_start.py ---")
-
-# 為了讓 uvicorn "app.main:app" 能找到東西，保留一個假的 app
-from fastapi import FastAPI
-app = FastAPI()
-
-@app.get("/")
-def root():
-    return {"message": "This is a placeholder if app.main is imported."}
-
-print("--- app/main.py: Minimal placeholder loaded ---")
