@@ -16,7 +16,7 @@ python-dotenv==1.0.1
 
 # === HTTP 請求 ===
 requests==2.32.3
-aiohttp==3.9.5    # aiohttp 也常用於異步請求
+aiohttp==3.9.3    # 修改為 line-bot-sdk 依賴的版本
 
 # === Email 處理 (如果後面會用到) ===
 # email-validator==2.1.1
