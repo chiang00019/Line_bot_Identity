@@ -1,0 +1,70 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python virtual environment
+venv/
+env/
+.venv/
+.Python
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE and OS specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Local env files (should be set in Zeabur)
+.env
+*.env
+
+# Local SQLite database (if any, usually managed by Zeabur's DB service)
+*.db
+*.sqlite
+*.sqlite3
+game_bot.db
+
+# Logs and temp files
+logs/
+*.log
+temp/
+tmp/
+*.tmp
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ZIP files, etc. (if not needed in the image)
+*.zip
+
+# Zeabur specific config for buildpack (not needed for Dockerfile deployment)
+zeabur.json
+zeabur_env_template.txt
+ZEABUR_DEPLOY.md
+ZEABUR_CHECKLIST.md
+
+# Heroku specific (if any remnants)
+Procfile
+runtime.txt
+
+# Node.js (if you had any frontend or build tools locally)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Local development helper files not needed in Docker image
+init_db.py
+
+# Any other large binary files or unnecessary local files
+--tailheroku logs --tailheroku logs --tailheroku logs --tail
