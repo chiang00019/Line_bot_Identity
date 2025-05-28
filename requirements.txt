@@ -1,38 +1,31 @@
 # === 核心框架 ===
-fastapi>=0.100.0,<0.111.0
-uvicorn[standard]>=0.23.0,<0.28.0
+fastapi==0.109.2  # 較新的 FastAPI 版本，原生支援 Pydantic v2
+uvicorn[standard]==0.27.1
 
 # === Line Bot SDK ===
-line-bot-sdk>=3.5.0,<4.0.0
+line-bot-sdk==3.8.0 # 較新的 Line Bot SDK，確認支援 Pydantic v2
+
+# === Pydantic (核心) ===
+pydantic==2.8.2     # 明確指定 Pydantic V2 的一個穩定版本
 
 # === 資料庫 ===
-sqlalchemy>=1.4.0,<2.1.0
+sqlalchemy==2.0.31
 
 # === 環境變數 ===
-python-dotenv>=1.0.0,<2.0.0
+python-dotenv==1.0.1
 
 # === HTTP 請求 ===
-requests>=2.31.0,<3.0.0
-aiohttp>=3.9.0,<4.0.0
+requests==2.32.3
+aiohttp==3.9.5    # aiohttp 也常用於異步請求
 
-# === Web 自動化（Selenium） - 暫時註解，Zeabur 可能需要額外設定 ===
-# selenium==4.15.0
-# webdriver-manager==4.0.1
-
-# === Email 處理 ===
-email-validator>=2.1.0,<3.0.0
-
-# === 圖片處理 - 暫時註解，Zeabur 可能需要額外設定 ===
-# Pillow==10.1.0
+# === Email 處理 (如果後面會用到) ===
+# email-validator==2.1.1
 
 # === 日期時間處理 ===
-python-dateutil>=2.8.0,<3.0.0
-
-# === JSON 處理 (Pydantic V2) ===
-pydantic>=2.0.3,<3.0.0
+python-dateutil==2.9.0
 
 # === 其他必要套件 ===
-typing-extensions>=4.8.0,<5.0.0
+typing-extensions==4.12.2
 
 # === 生產環境 ===
-gunicorn>=21.0.0,<22.0.0
+gunicorn==22.0.0
