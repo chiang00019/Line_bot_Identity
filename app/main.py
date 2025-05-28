@@ -24,8 +24,11 @@ from config.settings import Config
 load_dotenv()
 
 # 設定日誌
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("app.main")
+
+print("--- app/main.py: Script started, imports successful ---")
+logger.info("--- app/main.py: Script started, imports successful (logger) ---")
 
 def create_app() -> FastAPI:
     """創建FastAPI應用程式"""
@@ -45,44 +48,22 @@ def create_app() -> FastAPI:
     line_bot_api = LineBotApi(Config.CHANNEL_ACCESS_TOKEN)
     handler = WebhookHandler(Config.CHANNEL_SECRET)
 
-    @app.get("/", response_class=HTMLResponse)
-    async def index():
-        """首頁 - 健康檢查"""
-        return """
-        <html>
-            <head>
-                <title>遊戲自動化儲值 Line Bot</title>
-                <meta charset="utf-8">
-            </head>
-            <body>
-                <h1>🎮 遊戲自動化儲值 Line Bot</h1>
-                <p>系統正在運行中！</p>
-                <ul>
-                    <li>✅ Line Bot API 已連接</li>
-                    <li>✅ Webhook 已準備就緒</li>
-                    <li>✅ 自動化服務已啟動</li>
-                </ul>
-                <p><a href="/docs">查看 API 文檔</a></p>
-                <hr>
-                <p><strong>部署資訊:</strong></p>
-                <ul>
-                    <li>平台: Zeabur</li>
-                    <li>運行環境: Python + FastAPI</li>
-                    <li>服務端口: {port}</li>
-                </ul>
-            </body>
-        </html>
-        """.format(port=os.getenv('PORT', '5000'))
+    @app.on_event("startup")
+    async def startup_event():
+        print("--- app/main.py: Application startup event triggered ---")
+        logger.info("--- app/main.py: Application startup event triggered (logger) ---")
+
+    @app.get("/")
+    def read_root():
+        print("--- app/main.py: Root endpoint / called ---")
+        logger.info("--- app/main.py: Root endpoint / was called (logger) ---")
+        return {"message": "Minimal app is running! Check Zeabur logs for '---' messages."}
 
     @app.get("/health")
-    async def health_check():
-        """健康檢查端點"""
-        return {
-            "status": "healthy",
-            "service": "game-automation-linebot",
-            "version": "1.0.0",
-            "line_bot_connected": bool(Config.CHANNEL_ACCESS_TOKEN and Config.CHANNEL_SECRET)
-        }
+    def health_check():
+        print("--- app/main.py: Health endpoint /health called ---")
+        logger.info("--- app/main.py: Health endpoint /health was called (logger) ---")
+        return {"status": "healthy"}
 
     @app.get("/webhook/test")
     async def webhook_test():
@@ -474,38 +455,10 @@ def create_app() -> FastAPI:
             content={"message": "Internal server error"}
         )
 
+    print("--- app/main.py: End of file, app instance and routes defined ---")
+    logger.info("--- app/main.py: End of file, app instance and routes defined (logger) ---")
+
     return app
 
 # 創建應用程式實例
 app = create_app()
-
-if __name__ == "__main__":
-    import uvicorn
-
-    # 取得環境變數中的端口，預設為 5000
-    port = int(os.getenv("PORT", 5000))
-
-    # 檢查是否為生產環境（Zeabur 通常會設定 PORT 環境變數）
-    is_production = bool(os.getenv("PORT"))
-
-    if is_production:
-        # 生產環境設定（Zeabur）
-        logger.info(f"🚀 啟動生產環境服務，端口: {port}")
-        uvicorn.run(
-            "app.main:app",
-            host="0.0.0.0",
-            port=port,
-            reload=False,  # 生產環境不使用熱重載
-            log_level="info",
-            workers=1  # Zeabur 建議使用單一 worker
-        )
-    else:
-        # 開發環境設定
-        logger.info(f"🔧 啟動開發環境服務，端口: {port}")
-        uvicorn.run(
-            "app.main:app",
-            host="0.0.0.0",
-            port=port,
-            reload=True,
-            log_level="info"
-        )
