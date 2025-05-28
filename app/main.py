@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 
 from app.bot_handler import handle_message as process_line_event
 from config.settings import Config
+from .database import init_database
 
 # 載入環境變數
 load_dotenv()
@@ -63,6 +64,13 @@ def create_app() -> FastAPI:
     async def startup_event():
         print("--- app/main.py: Application startup event triggered ---")
         logger.info("--- app/main.py: Application startup event triggered (logger) ---")
+        try:
+            logger.info("--- app/main.py: Initializing database ---")
+            init_database()
+            logger.info("--- app/main.py: Database initialization complete/checked ---")
+        except Exception as e:
+            logger.error(f"--- app/main.py: Database initialization FAILED: {e} ---")
+            # 根據情況，你可能希望應用程式在這裡失敗並退出
 
     @app.get("/")
     def read_root():
