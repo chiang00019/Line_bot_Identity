@@ -100,6 +100,7 @@ static/media/
 ngrok.exe
 ngrok
 *.exe
+ngrok.zip
 
 # === 專案特定檔案 ===
 screenshots/

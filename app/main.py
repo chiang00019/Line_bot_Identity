@@ -63,9 +63,16 @@ def create_app() -> FastAPI:
                     <li>✅ 自動化服務已啟動</li>
                 </ul>
                 <p><a href="/docs">查看 API 文檔</a></p>
+                <hr>
+                <p><strong>部署資訊:</strong></p>
+                <ul>
+                    <li>平台: Zeabur</li>
+                    <li>運行環境: Python + FastAPI</li>
+                    <li>服務端口: {port}</li>
+                </ul>
             </body>
         </html>
-        """
+        """.format(port=os.getenv('PORT', '5000'))
 
     @app.get("/health")
     async def health_check():
@@ -475,11 +482,30 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
 
-    # 開發環境啟動
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=5000,
-        reload=True,
-        log_level="info"
-    )
+    # 取得環境變數中的端口，預設為 5000
+    port = int(os.getenv("PORT", 5000))
+
+    # 檢查是否為生產環境（Zeabur 通常會設定 PORT 環境變數）
+    is_production = bool(os.getenv("PORT"))
+
+    if is_production:
+        # 生產環境設定（Zeabur）
+        logger.info(f"🚀 啟動生產環境服務，端口: {port}")
+        uvicorn.run(
+            "app.main:app",
+            host="0.0.0.0",
+            port=port,
+            reload=False,  # 生產環境不使用熱重載
+            log_level="info",
+            workers=1  # Zeabur 建議使用單一 worker
+        )
+    else:
+        # 開發環境設定
+        logger.info(f"🔧 啟動開發環境服務，端口: {port}")
+        uvicorn.run(
+            "app.main:app",
+            host="0.0.0.0",
+            port=port,
+            reload=True,
+            log_level="info"
+        )

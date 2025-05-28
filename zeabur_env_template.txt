@@ -1,0 +1,38 @@
+# Zeabur 環境變數設定模板
+# 請在 Zeabur 專案的 Environment Variables 設定頁面中設定以下變數
+
+# === Line Bot 基本設定 ===
+CHANNEL_ACCESS_TOKEN=你的_Line_Bot_Channel_Access_Token
+CHANNEL_SECRET=你的_Line_Bot_Channel_Secret
+
+# === 資料庫設定 ===
+DATABASE_URL=sqlite:///./game_bot.db
+
+# === Email 設定（可選） ===
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=你的_email@gmail.com
+SMTP_PASSWORD=你的_app_密碼
+IMAP_HOST=imap.gmail.com
+IMAP_PORT=993
+
+# === Razer 設定（可選） ===
+RAZER_MERCHANT_ID=你的_Razer_商戶ID
+RAZER_SECRET_KEY=你的_Razer_密鑰
+
+# === 管理員設定 ===
+ADMIN_USER_IDS=U1234567890,U0987654321
+SUPER_ADMIN_ID=U1234567890
+
+# === 系統設定 ===
+WEBHOOK_URL=https://你的應用名稱.zeabur.app/callback
+DEBUG_MODE=false
+LOG_LEVEL=INFO
+
+# === Chrome Driver 設定（Zeabur 自動處理） ===
+CHROME_DRIVER_PATH=/usr/bin/chromedriver
+
+# === Token 預設設定 ===
+DEFAULT_TOKEN_PRICE=100
+MAX_TOKENS_PER_USER=10000
+TOKEN_EXPIRY_DAYS=365
