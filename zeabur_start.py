@@ -7,59 +7,46 @@ Zeabur 專用啟動檔案
 
 import os
 import sys
-import logging
+import time # 新增 time 模組
 from pathlib import Path
-import uvicorn
 
-# 設定日誌基礎配置
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger("zeabur_start") # 使用特定的 logger 名稱
-
-print("--- zeabur_start.py: Script started ---")
-logger.info("--- zeabur_start.py: Script started (logger) ---")
+print(f"--- zeabur_start.py: TOP OF SCRIPT --- Python version: {sys.version} ---")
 
 # 確保專案根目錄在 Python 路徑中
-project_root = Path(__file__).resolve().parent # 使用 resolve() 獲取絕對路徑
+project_root = Path(__file__).resolve().parent
 sys.path.insert(0, str(project_root))
 print(f"--- zeabur_start.py: sys.path[0] = {sys.path[0]} ---")
-logger.info(f"--- zeabur_start.py: sys.path[0] = {sys.path[0]} (logger) ---")
 
-port_str = os.getenv("PORT", "8080") # Zeabur 會提供 PORT
+port_str = os.getenv("PORT", "8080")
 print(f"--- zeabur_start.py: PORT string from env: {port_str} ---")
-logger.info(f"--- zeabur_start.py: PORT string from env: {port_str} (logger) ---")
 
-try:
-    port = int(port_str)
-    print(f"--- zeabur_start.py: Effective PORT: {port} ---")
-    logger.info(f"--- zeabur_start.py: Effective PORT: {port} (logger) ---")
-except ValueError:
-    print(f"--- zeabur_start.py: ERROR - Invalid PORT value: {port_str}. Defaulting to 8080 ---")
-    logger.error(f"--- zeabur_start.py: ERROR - Invalid PORT value: {port_str}. Defaulting to 8080 (logger) ---")
-    port = 8080
+# 打印所有環境變數，檢查關鍵變數是否存在
+print("--- zeabur_start.py: All Environment Variables ---")
+for key, value in os.environ.items():
+    if "TOKEN" in key.upper() or "SECRET" in key.upper(): # 部分遮蔽敏感資訊
+        display_value = f"{value[:4]}...{value[-4:]}" if len(value) > 8 else value
+        print(f"--- zeabur_start.py: ENV: {key} = {display_value} ---")
+    else:
+        print(f"--- zeabur_start.py: ENV: {key} = {value} ---")
+print("--- zeabur_start.py: End of Environment Variables ---")
 
-try:
-    print("--- zeabur_start.py: Attempting to run uvicorn app.main:app ---")
-    logger.info("--- zeabur_start.py: Attempting to run uvicorn app.main:app (logger) ---")
-    uvicorn.run(
-        "app.main:app", # 指向簡化後的 app/main.py 中的 app 實例
-        host="0.0.0.0",
-        port=port,
-        log_level="debug", # 使用 debug 以獲取更詳細的 uvicorn 日誌
-        access_log=True,
-        workers=1 # Zeabur 建議
-    )
-except SystemExit as e: # Uvicorn 在某些情況下可能以 SystemExit 退出
-    print(f"--- zeabur_start.py: Uvicorn exited with SystemExit: {e} ---")
-    logger.info(f"--- zeabur_start.py: Uvicorn exited with SystemExit: {e} (logger) ---")
-    # 根據 e.code 決定是否真的算錯誤
-    if e.code != 0: # 非 0 的退出碼通常表示有問題
-      raise # 重新拋出異常以便 Zeabur 知道啟動失敗
-except Exception as e:
-    print(f"--- zeabur_start.py: ERROR during uvicorn.run: {e} ---")
-    logger.error(f"--- zeabur_start.py: ERROR during uvicorn.run: {e} (logger) ---")
-    import traceback
-    traceback.print_exc()
-    sys.exit(1)
+# 檢查關鍵環境變數
+token = os.getenv("CHANNEL_ACCESS_TOKEN")
+secret = os.getenv("CHANNEL_SECRET")
+if not token:
+    print("--- zeabur_start.py: ERROR - CHANNEL_ACCESS_TOKEN is MISSING ---")
+if not secret:
+    print("--- zeabur_start.py: ERROR - CHANNEL_SECRET is MISSING ---")
 
-print("--- zeabur_start.py: Script ended (should ideally not be reached if uvicorn is blocking and running) ---")
-logger.info("--- zeabur_start.py: Script ended (logger) ---")
+print("--- zeabur_start.py: This is a minimal test. Script will now exit. ---")
+# 為了讓日誌有時間被收集，可以短暫睡眠
+# time.sleep(5) # 如果日誌還是看不到，可以試試這個
+# sys.exit(0) # 正常退出，看看日誌是否顯示
+# 如果上面被註解，腳本會執行完畢並退出，容器可能被視為"成功"執行完畢但沒做任何事
+# Zeabur 可能期望一個長時間運行的進程，如果腳本快速退出，也可能導致 backoff
+# 讓我們故意引發一個異常，看看 Traceback 是否會出現在日誌中
+# raise Exception("--- zeabur_start.py: This is a deliberate test exception to check logging. ---")
+# 或者，讓它保持運行一段時間
+print("--- zeabur_start.py: Minimal test script will keep running for 60 seconds to check logs... ---")
+time.sleep(60)
+print("--- zeabur_start.py: Minimal test script finished running. ---")
