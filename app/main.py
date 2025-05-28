@@ -19,7 +19,8 @@ from dotenv import load_dotenv
 
 from app.bot_handler import handle_message as process_line_event
 from config.settings import Config
-from .database import init_database
+from .database import init_database, get_db_session
+from .models import SystemConfig
 
 # 載入環境變數
 load_dotenv()
@@ -65,11 +66,18 @@ def create_app() -> FastAPI:
         print("--- app/main.py: Application startup event triggered ---")
         logger.info("--- app/main.py: Application startup event triggered (logger) ---")
         try:
-            logger.info("--- app/main.py: Initializing database ---")
+            logger.info("--- app/main.py: Initializing database (creating tables if not exist) ---")
             init_database()
             logger.info("--- app/main.py: Database initialization complete/checked ---")
+
+            logger.info("--- app/main.py: Seeding default system configs ---")
+            seed_default_system_configs()
+            logger.info("--- app/main.py: Default system configs seeded/checked ---")
+
         except Exception as e:
-            logger.error(f"--- app/main.py: Database initialization FAILED: {e} ---")
+            logger.error(f"--- app/main.py: Database initialization or seeding FAILED: {e} ---")
+            import traceback
+            logger.error(traceback.format_exc())
             # 根據情況，你可能希望應用程式在這裡失敗並退出
 
     @app.get("/")
@@ -466,3 +474,41 @@ def create_app() -> FastAPI:
 logger.info("--- app/main.py: Calling create_app() to create app instance ---")
 app = create_app()
 logger.info("--- app/main.py: FastAPI app instance 'app' created globally ---")
+
+# 在 create_app() 函數的外部，或者一個適合的地方，定義 seed_default_system_configs
+def seed_default_system_configs():
+    default_configs = [
+        {
+            'config_key': 'bank_account_info',
+            'config_value': '銀行：範例銀行 (007)\n帳號：123-456-7890123\n戶名：自動化儲值專戶',
+            'description': '用於 Token 充值的銀行帳戶資訊。'
+        },
+        {
+            'config_key': 'min_deposit_amount',
+            'config_value': '100',
+            'description': '用戶單次充值的最低金額 (NT$)'
+        },
+        {
+            'config_key': 'token_exchange_rate',
+            'config_value': '1.0',
+            'description': '新台幣與 Token 的兌換比率 (1 NT$ = X Token)'
+        }
+        # 你可以在這裡加入更多預設系統設定
+    ]
+
+    try:
+        with get_db_session() as db:
+            for config_data in default_configs:
+                existing_config = db.query(SystemConfig).filter_by(config_key=config_data['config_key']).first()
+                if not existing_config:
+                    new_config = SystemConfig(**config_data)
+                    db.add(new_config)
+                    logger.info(f"Seeded system config: {config_data['config_key']} = {config_data['config_value']}")
+                # else: # 可選：如果已存在，可以考慮更新或忽略
+                    # logger.info(f"System config already exists: {config_data['config_key']}")
+            db.commit()
+    except Exception as e:
+        logger.error(f"Error seeding default system configs: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        # 即使 seeding 失敗，我們可能還是希望應用程式繼續運行
