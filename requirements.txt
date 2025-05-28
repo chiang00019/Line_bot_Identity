@@ -15,7 +15,7 @@ sqlalchemy==2.0.31
 python-dotenv==1.0.1
 
 # === HTTP 請求 ===
-requests==2.32.3
+requests==2.31.0  # 修改為 line-bot-sdk 依賴的版本
 aiohttp==3.9.3    # 修改為 line-bot-sdk 依賴的版本
 
 # === Email 處理 (如果後面會用到) ===
