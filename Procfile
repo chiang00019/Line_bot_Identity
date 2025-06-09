@@ -1,3 +1,4 @@
+# Forcing new build at {datetime.datetime.utcnow().isoformat()}
 # Zeabur release command to install Playwright browser dependencies
 release: python -m playwright install --with-deps chromium
 # Web process to run the FastAPI application
