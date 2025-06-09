@@ -2,10 +2,12 @@
 from linebot.models import TextSendMessage
 import logging
 from sqlalchemy.exc import IntegrityError
+import threading
 
 # 從 .database 導入 get_db_session，從 .models 導入所有需要的模型
 from .database import get_db_session
 from .models import Group, User, GroupMember, TokenLog, SystemConfig # 新增 SystemConfig
+from .services.playwright_service import PlaywrightService
 
 logger = logging.getLogger("app.bot_handler")
 
@@ -145,6 +147,118 @@ class BotCommandHandler:
             reply_text = "❌ 索取購買資訊時發生錯誤。"
         self.line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
+    def _recharge_worker(self, event, token_cost):
+        """在背景執行 Playwright 自動化儲值的工人函式"""
+        group_id = event.source.group_id
+        user_id = event.source.user_id
+
+        try:
+            parts = event.message.text.strip().split()
+            product_id = parts[1]
+            player_id = parts[2]
+            player_server = parts[3]
+            game_name = "Identity V Echoes(Global)" # 目前暫時寫死
+
+            # 1. 從資料庫獲取 SEAGM 登入憑證
+            with get_db_session() as db:
+                seagm_user_cfg = db.query(SystemConfig).filter_by(config_key='seagm_username').first()
+                seagm_pass_cfg = db.query(SystemConfig).filter_by(config_key='seagm_password').first()
+                if not (seagm_user_cfg and seagm_pass_cfg and seagm_user_cfg.config_value and seagm_pass_cfg.config_value):
+                    raise ValueError("系統未設定 SEAGM 帳號或密碼。")
+                seagm_username = seagm_user_cfg.config_value
+                seagm_password = seagm_pass_cfg.config_value
+
+            # 2. 執行 Playwright 自動化
+            logger.info(f"Starting Playwright automation for group {group_id}")
+            service = PlaywrightService()
+            success, message = service.run_seagm_automation(
+                seagm_username=seagm_username,
+                seagm_password=seagm_password,
+                game_name=game_name,
+                player_id=player_id,
+                player_server=player_server,
+                product_id=product_id
+            )
+            logger.info(f"Playwright automation finished for group {group_id}. Success: {success}")
+
+            # 3. 處理自動化結果
+            if success:
+                # 3a. 扣除 Token
+                with get_db_session() as db:
+                    group = db.query(Group).filter(Group.line_group_id == group_id).with_for_update().first()
+                    user = db.query(User).filter(User.line_user_id == user_id).first()
+
+                    if group.token_balance < token_cost:
+                        final_message = f"⚠️ 儲值流程已完成，但扣款失敗！\n原因: Token 餘額不足 ({group.token_balance:.1f})，需要 {token_cost:.1f}。\n請聯繫管理員處理此筆交易。"
+                    else:
+                        balance_before = group.token_balance
+                        group.token_balance -= token_cost
+                        balance_after = group.token_balance
+                        db.add(TokenLog(
+                            group_id=group.id, user_id=user.id if user else None,
+                            transaction_type='withdraw', amount=-token_cost,
+                            balance_before=balance_before, balance_after=balance_after,
+                            description=f"儲值 {game_name} ({product_id})",
+                            operator=user.display_name if user else "System"
+                        ))
+                        db.commit()
+                        final_message = f"✅ 儲值成功，已扣款！\n\n- 遊戲: {game_name}\n- 商品: {product_id}\n- 玩家ID: {player_id}\n- 花費: {token_cost:.1f} Token\n- 剩餘: {balance_after:.1f} Token\n\n{message}"
+            else:
+                # 3b. 回報失敗
+                final_message = f"❌ 儲值失敗！\n\n- 遊戲: {game_name}\n- 原因: {message}\n\n此次未扣除任何 Token。"
+
+            # 4. 推播最終結果到群組
+            self.line_bot_api.push_message(group_id, TextSendMessage(text=final_message))
+
+        except Exception as e:
+            logger.error(f"Error in recharge worker for group {group_id}: {e}", exc_info=True)
+            self.line_bot_api.push_message(group_id, TextSendMessage(text=f"⚙️ 儲值機器人發生系統錯誤，請聯繫管理員。\n錯誤: {e}"))
+
+    def _handle_recharge(self, event):
+        """處理 /儲值 指令的初始部分"""
+        group_id = event.source.group_id
+        logger.info(f"Group {group_id}: Received recharge command")
+
+        try:
+            parts = event.message.text.strip().split()
+            if len(parts) != 5:
+                reply_text = "⚠️ 指令格式錯誤！\n應為: /儲值 <商品ID> <玩家ID> <伺服器> <Token價格>\n例如: /儲值 13664 12345678 Asia 35.2"
+                self.line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+                return
+
+            _command, _product_id, _player_id, _player_server, cost_str = parts
+
+            try:
+                token_cost = float(cost_str)
+            except ValueError:
+                reply_text = "⚠️ Token 價格必須是數字！"
+                self.line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+                return
+
+            with get_db_session() as db:
+                group = db.query(Group).filter(Group.line_group_id == group_id).first()
+                if not group:
+                    reply_text = "⚠️ 本群組尚未綁定 Token 帳戶。"
+                    self.line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+                    return
+
+                if group.token_balance < token_cost:
+                    reply_text = f"📉 Token 餘額不足！\n\n- 目前餘額: {group.token_balance:.1f}\n- 本次需要: {token_cost:.1f}\n- 不足: {token_cost - group.token_balance:.1f}"
+                    self.line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+                    return
+
+            # 在背景執行緒中啟動 Playwright 任務
+            worker_thread = threading.Thread(target=self._recharge_worker, args=(event, token_cost))
+            worker_thread.start()
+
+            # 立即回覆使用者，告知請求已在處理中
+            reply_text = f"⏳ 儲值請求已接收！\n\n- 遊戲: 第五人格\n- 商品ID: {_product_id}\n- 價格: {token_cost:.1f} Token\n\n正在啟動自動化流程，完成後將會通知。請勿重複發送指令。"
+            self.line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+        except Exception as e:
+            logger.error(f"Error handling recharge for group {group_id}: {e}", exc_info=True)
+            self.line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"❌ 處理儲值指令時發生錯誤: {e}"))
+
     def handle_command(self, event):
         user_id = event.source.user_id
         message_text = event.message.text.strip().lower()
@@ -168,7 +282,8 @@ class BotCommandHandler:
                 "--- 群組專用指令 ---\n"
                 "• /綁定Token - (群組)綁定Token帳戶\n"
                 "• /查詢Token - (群組)查詢餘額與記錄\n"
-                "• /購買Token - (群組)顯示購買Token資訊"
+                "• /購買Token - (群組)顯示購買Token資訊\n"
+                "• /儲值 <商品ID> <玩家ID> <伺服器> <價格> - (群組)執行自動化儲值"
             )
             reply_text = base_commands + "\n\n🔧 更多功能陸續推出！"
 
@@ -181,6 +296,9 @@ class BotCommandHandler:
                 return
             elif message_text == '/購買token':
                 self._handle_buy_token_info(event)
+                return
+            elif message_text.startswith('/儲值'):
+                self._handle_recharge(event)
                 return
             else:
                 pass

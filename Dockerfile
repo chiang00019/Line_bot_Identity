@@ -8,19 +8,20 @@ ENV PYTHONPATH /app
 # 設定工作目錄
 WORKDIR /app
 
-# 複製依賴定義檔案
+# 1. 先安裝 uv（超快的 Python 依賴管理工具）
+RUN pip install uv
+
+# 2. 複製 lock file（和 requirements.txt，建議都帶著）
 COPY requirements.txt .
+COPY requirements.lock.txt .
 
-# 安裝依賴
-# 使用 --prefer-binary 嘗試避免編譯問題，--no-cache-dir 減少映像檔大小
-RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
+# 3. 用 lock file 安裝依賴（**只需要這一步，會照 lock file 一模一樣還原所有依賴**）
+RUN uv pip sync requirements.lock.txt
 
-# 複製專案中的所有檔案到工作目錄
-# 注意：確保 .dockerignore 檔案有正確設定，以排除不必要的檔案
+# 4. 複製專案所有檔案
 COPY . .
 
-# 暴露的端口將由 zeabur_start.py 內部讀取的 $PORT 環境變數決定
-# EXPOSE 8080 # 可以不寫，因為 Zeabur 會處理端口映射
+# EXPOSE 8080 # 可以省略
 
-# 設定啟動命令，使用我們為 Zeabur 準備的啟動腳本
+# 5. 設定啟動命令
 CMD ["python", "zeabur_start.py"]

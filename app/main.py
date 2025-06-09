@@ -492,6 +492,16 @@ def seed_default_system_configs():
             'config_key': 'token_exchange_rate',
             'config_value': '1.0',
             'description': '新台幣與 Token 的兌換比率 (1 NT$ = X Token)'
+        },
+        {
+            'config_key': 'seagm_username',
+            'config_value': 'kk5010760107@gmail.com',
+            'description': '用於登入 SEAGM 網站的帳號。'
+        },
+        {
+            'config_key': 'seagm_password',
+            'config_value': 'C5dpLqUC#cq#5Rc',
+            'description': '用於登入 SEAGM 網站的密碼。'
         }
         # 你可以在這裡加入更多預設系統設定
     ]

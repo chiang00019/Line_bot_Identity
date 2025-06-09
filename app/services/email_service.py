@@ -313,7 +313,7 @@ class EmailService:
             msg['To'] = ', '.join(to_emails)
             msg['Subject'] = subject
 
-            msg.attach(MIMEText(body, 'plain', 'utf-8'))
+                msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
             await aiosmtplib.send(
                 msg,
