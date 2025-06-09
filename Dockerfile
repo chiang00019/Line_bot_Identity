@@ -8,15 +8,14 @@ ENV PYTHONPATH /app
 # 設定工作目錄
 WORKDIR /app
 
-# 1. 先安裝 uv（超快的 Python 依賴管理工具）
-RUN pip install uv
-
-# 2. 複製 lock file（和 requirements.txt，建議都帶著）
+# 1. 複製 requirements.txt
 COPY requirements.txt .
-COPY requirements.lock.txt .
 
-# 3. 用 lock file 安裝依賴（**只需要這一步，會照 lock file 一模一樣還原所有依賴**）
-RUN uv pip sync requirements.lock.txt
+# 2. 安裝 Python 依賴
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 3. 安裝 Playwright 瀏覽器
+RUN playwright install chromium
 
 # 4. 複製專案所有檔案
 COPY . .
