@@ -8,6 +8,11 @@ ENV PYTHONPATH /app
 # 設定工作目錄
 WORKDIR /app
 
+# 安裝編譯 lxml 所需的系統套件
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libxml2-dev libxslt1-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 # 1. 複製 requirements.txt
 COPY requirements.txt .
 
